@@ -1,92 +1,84 @@
 from pathlib import Path
 
-import pandas as pd
-from flask import Flask, render_template, request
+from flask import Flask, abort, render_template
+
+from invoice_parser import parse_all, parse_invoice
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_FILE = BASE_DIR / "data" / "invoices.csv"
+DATA_DIR = BASE_DIR / "data"
 
 app = Flask(__name__)
 
 
-def load_invoices() -> pd.DataFrame:
-    if DATA_FILE.suffix.lower() in {".xlsx", ".xls"}:
-        df = pd.read_excel(DATA_FILE)
-    else:
-        df = pd.read_csv(DATA_FILE)
-
-    df["date"] = pd.to_datetime(df["date"]).dt.date
-    for col in ["sale_usd", "sale_iqd", "cost_usd", "cost_iqd"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
-    df["profit_usd"] = df["sale_usd"] - df["cost_usd"]
-    df["profit_iqd"] = df["sale_iqd"] - df["cost_iqd"]
-    return df
-
-
-def filter_by_range(df: pd.DataFrame, start, end) -> pd.DataFrame:
-    if start:
-        df = df[df["date"] >= pd.to_datetime(start).date()]
-    if end:
-        df = df[df["date"] <= pd.to_datetime(end).date()]
-    return df
-
-
 @app.route("/")
 def dashboard():
-    df = load_invoices()
-
-    start = request.args.get("start") or ""
-    end = request.args.get("end") or ""
-    df = filter_by_range(df, start, end)
-
-    daily = (
-        df.groupby("date")
-        .agg(
-            sale_usd=("sale_usd", "sum"),
-            sale_iqd=("sale_iqd", "sum"),
-            cost_usd=("cost_usd", "sum"),
-            cost_iqd=("cost_iqd", "sum"),
-            profit_usd=("profit_usd", "sum"),
-            profit_iqd=("profit_iqd", "sum"),
-            invoices=("invoice_id", "count"),
-        )
-        .reset_index()
-        .sort_values("date")
-    )
+    invoices = parse_all(DATA_DIR)
 
     totals = {
-        "sale_usd": float(df["sale_usd"].sum()),
-        "sale_iqd": float(df["sale_iqd"].sum()),
-        "cost_usd": float(df["cost_usd"].sum()),
-        "cost_iqd": float(df["cost_iqd"].sum()),
-        "profit_usd": float(df["profit_usd"].sum()),
-        "profit_iqd": float(df["profit_iqd"].sum()),
-        "invoices": int(len(df)),
+        "usd_value": sum(inv["total"]["usd"]["total_value"] for inv in invoices),
+        "usd_cost": sum(inv["total"]["usd"]["total_cost"] for inv in invoices),
+        "usd_margin": sum(inv["total"]["usd"]["margin"] for inv in invoices),
+        "iqd_value": sum(inv["total"]["iqd"]["total_value"] for inv in invoices),
+        "iqd_cost": sum(inv["total"]["iqd"]["total_cost"] for inv in invoices),
+        "iqd_margin": sum(inv["total"]["iqd"]["margin"] for inv in invoices),
+        "count": len(invoices),
     }
+    totals["usd_margin_pct"] = (
+        totals["usd_margin"] / totals["usd_value"] if totals["usd_value"] else 0
+    )
 
+    daily: dict = {}
+    for inv in invoices:
+        key = str(inv["order_date"])
+        d = daily.setdefault(
+            key,
+            {
+                "date": key,
+                "invoices": 0,
+                "usd_value": 0.0,
+                "usd_cost": 0.0,
+                "usd_margin": 0.0,
+                "iqd_value": 0.0,
+                "iqd_cost": 0.0,
+                "iqd_margin": 0.0,
+            },
+        )
+        d["invoices"] += 1
+        d["usd_value"] += inv["total"]["usd"]["total_value"]
+        d["usd_cost"] += inv["total"]["usd"]["total_cost"]
+        d["usd_margin"] += inv["total"]["usd"]["margin"]
+        d["iqd_value"] += inv["total"]["iqd"]["total_value"]
+        d["iqd_cost"] += inv["total"]["iqd"]["total_cost"]
+        d["iqd_margin"] += inv["total"]["iqd"]["margin"]
+
+    daily_rows = sorted(daily.values(), key=lambda r: r["date"], reverse=True)
+    chart_rows = sorted(daily.values(), key=lambda r: r["date"])
     chart = {
-        "labels": [d.isoformat() for d in daily["date"]],
-        "sale_usd": [float(v) for v in daily["sale_usd"]],
-        "cost_usd": [float(v) for v in daily["cost_usd"]],
-        "profit_usd": [float(v) for v in daily["profit_usd"]],
-        "sale_iqd": [float(v) for v in daily["sale_iqd"]],
-        "cost_iqd": [float(v) for v in daily["cost_iqd"]],
-        "profit_iqd": [float(v) for v in daily["profit_iqd"]],
+        "labels": [r["date"] for r in chart_rows],
+        "usd_value": [r["usd_value"] for r in chart_rows],
+        "usd_cost": [r["usd_cost"] for r in chart_rows],
+        "usd_margin": [r["usd_margin"] for r in chart_rows],
+        "iqd_value": [r["iqd_value"] for r in chart_rows],
+        "iqd_cost": [r["iqd_cost"] for r in chart_rows],
+        "iqd_margin": [r["iqd_margin"] for r in chart_rows],
     }
-
-    invoices = df.sort_values(["date", "invoice_id"], ascending=[False, False]).to_dict(orient="records")
-    daily_rows = daily.sort_values("date", ascending=False).to_dict(orient="records")
 
     return render_template(
         "dashboard.html",
-        totals=totals,
         invoices=invoices,
+        totals=totals,
         daily_rows=daily_rows,
         chart=chart,
-        start=start,
-        end=end,
     )
+
+
+@app.route("/invoice/<file_name>")
+def invoice_detail(file_name: str):
+    path = (DATA_DIR / file_name).resolve()
+    if not path.is_file() or path.parent != DATA_DIR.resolve():
+        abort(404)
+    invoice = parse_invoice(path)
+    return render_template("invoice.html", inv=invoice)
 
 
 if __name__ == "__main__":

@@ -159,3 +159,35 @@ tbody tr:hover { background: #f8fafc; }
 
 .pos { color: #15803d; font-weight: 600; }
 .neg { color: #b91c1c; font-weight: 600; }
+
+.btn {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #2563eb;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+}
+.btn:hover { background: #1d4ed8; }
+
+.group-usd { background: #eff6ff; color: #1e40af; }
+.group-iqd { background: #fef3c7; color: #92400e; }
+
+.desc {
+    max-width: 280px;
+    white-space: normal;
+    text-align: right;
+    font-size: 13px;
+}
+
+tfoot th {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+header .sub {
+    color: #64748b;
+    font-size: 13px;
+}
