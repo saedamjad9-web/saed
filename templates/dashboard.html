@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>داش بورد المبيعات اليومية</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>داش بورد المبيعات اليومية</h1>
+        <form method="get" class="filters">
+            <label>من تاريخ
+                <input type="date" name="start" value="{{ start }}">
+            </label>
+            <label>إلى تاريخ
+                <input type="date" name="end" value="{{ end }}">
+            </label>
+            <button type="submit">تصفية</button>
+            <a class="reset" href="{{ url_for('dashboard') }}">مسح</a>
+        </form>
+    </header>
+
+    <section class="cards">
+        <div class="card">
+            <span class="label">عدد الفواتير</span>
+            <span class="value">{{ totals.invoices }}</span>
+        </div>
+        <div class="card sale">
+            <span class="label">إجمالي المبيعات</span>
+            <span class="value">${{ '{:,.2f}'.format(totals.sale_usd) }}</span>
+            <span class="sub">{{ '{:,.0f}'.format(totals.sale_iqd) }} د.ع</span>
+        </div>
+        <div class="card cost">
+            <span class="label">إجمالي الكلفة</span>
+            <span class="value">${{ '{:,.2f}'.format(totals.cost_usd) }}</span>
+            <span class="sub">{{ '{:,.0f}'.format(totals.cost_iqd) }} د.ع</span>
+        </div>
+        <div class="card profit">
+            <span class="label">إجمالي الربح</span>
+            <span class="value">${{ '{:,.2f}'.format(totals.profit_usd) }}</span>
+            <span class="sub">{{ '{:,.0f}'.format(totals.profit_iqd) }} د.ع</span>
+        </div>
+    </section>
+
+    <section class="charts">
+        <div class="chart-box">
+            <h2>المبيعات اليومية (دولار)</h2>
+            <canvas id="chartUsd"></canvas>
+        </div>
+        <div class="chart-box">
+            <h2>المبيعات اليومية (دينار)</h2>
+            <canvas id="chartIqd"></canvas>
+        </div>
+    </section>
+
+    <section class="table-box">
+        <h2>ملخص يومي</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>عدد الفواتير</th>
+                    <th>مبيعات $</th>
+                    <th>مبيعات د.ع</th>
+                    <th>كلفة $</th>
+                    <th>كلفة د.ع</th>
+                    <th>ربح $</th>
+                    <th>ربح د.ع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in daily_rows %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ row.invoices }}</td>
+                    <td>${{ '{:,.2f}'.format(row.sale_usd) }}</td>
+                    <td>{{ '{:,.0f}'.format(row.sale_iqd) }}</td>
+                    <td>${{ '{:,.2f}'.format(row.cost_usd) }}</td>
+                    <td>{{ '{:,.0f}'.format(row.cost_iqd) }}</td>
+                    <td class="pos">${{ '{:,.2f}'.format(row.profit_usd) }}</td>
+                    <td class="pos">{{ '{:,.0f}'.format(row.profit_iqd) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="table-box">
+        <h2>تفاصيل الفواتير</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>رقم الفاتورة</th>
+                    <th>التاريخ</th>
+                    <th>العميل</th>
+                    <th>سعر البيع $</th>
+                    <th>سعر البيع د.ع</th>
+                    <th>الكلفة $</th>
+                    <th>الكلفة د.ع</th>
+                    <th>الربح $</th>
+                    <th>الربح د.ع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td>{{ inv.invoice_id }}</td>
+                    <td>{{ inv.date }}</td>
+                    <td>{{ inv.customer }}</td>
+                    <td>${{ '{:,.2f}'.format(inv.sale_usd) }}</td>
+                    <td>{{ '{:,.0f}'.format(inv.sale_iqd) }}</td>
+                    <td>${{ '{:,.2f}'.format(inv.cost_usd) }}</td>
+                    <td>{{ '{:,.0f}'.format(inv.cost_iqd) }}</td>
+                    <td class="{{ 'pos' if inv.profit_usd >= 0 else 'neg' }}">${{ '{:,.2f}'.format(inv.profit_usd) }}</td>
+                    <td class="{{ 'pos' if inv.profit_iqd >= 0 else 'neg' }}">{{ '{:,.0f}'.format(inv.profit_iqd) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <script id="chart-data" type="application/json">{{ chart | tojson }}</script>
+    <script>
+        const data = JSON.parse(document.getElementById('chart-data').textContent);
+
+        const baseOptions = {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        };
+
+        new Chart(document.getElementById('chartUsd'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'مبيعات', data: data.sale_usd, backgroundColor: '#2563eb' },
+                    { label: 'كلفة', data: data.cost_usd, backgroundColor: '#dc2626' },
+                    { label: 'ربح', data: data.profit_usd, backgroundColor: '#16a34a' }
+                ]
+            },
+            options: baseOptions
+        });
+
+        new Chart(document.getElementById('chartIqd'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'مبيعات', data: data.sale_iqd, backgroundColor: '#2563eb' },
+                    { label: 'كلفة', data: data.cost_iqd, backgroundColor: '#dc2626' },
+                    { label: 'ربح', data: data.profit_iqd, backgroundColor: '#16a34a' }
+                ]
+            },
+            options: baseOptions
+        });
+    </script>
+</body>
+</html>
