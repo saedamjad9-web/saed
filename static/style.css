@@ -1,193 +1,460 @@
-* { box-sizing: border-box; }
+/* =====================================================================
+   Artisan Cacao Executive — design tokens
+   ===================================================================== */
+:root {
+    /* Surfaces */
+    --surface: #fff8f5;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #fff1ea;
+    --surface-container: #ffeade;
+    --surface-container-high: #ffe3d2;
+    --surface-container-highest: #fbddcb;
+    --surface-variant: #fbddcb;
 
-body {
-    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-    background: #f1f5f9;
-    color: #0f172a;
-    margin: 0;
-    padding: 0 24px 40px;
+    /* Foreground */
+    --on-surface: #28180d;             /* Cacao Ink */
+    --on-surface-variant: #50453c;
+    --outline: #82746b;
+    --outline-variant: #d4c3b8;
+
+    /* Brand */
+    --primary: #432406;                /* Deep Cacao */
+    --primary-strong: #5d3a1a;         /* Artisan Brown */
+    --on-primary: #ffffff;
+    --primary-container: #ffdcc2;
+    --on-primary-container: #2e1500;
+
+    /* Accent */
+    --accent: #ff9f1c;                 /* Golden Orange */
+    --accent-strong: #fd9d1a;
+    --accent-soft: #ffdcbc;
+    --on-accent: #28180d;
+
+    /* Celebration */
+    --gold: #d4af37;                   /* Burnished Gold */
+
+    /* Semantic */
+    --positive: #2f7a3a;
+    --negative: #ba1a1a;
+    --positive-soft: rgba(47, 122, 58, 0.10);
+    --negative-soft: rgba(186, 26, 26, 0.10);
+
+    /* Tinted shadows (warm cacao) */
+    --shadow-1: 0 1px 2px rgba(67, 36, 6, 0.06),
+                0 1px 1px rgba(67, 36, 6, 0.04);
+    --shadow-2: 0 8px 20px rgba(67, 36, 6, 0.08),
+                0 2px 4px rgba(67, 36, 6, 0.05);
+    --shadow-pop: 0 14px 32px rgba(67, 36, 6, 0.12);
+
+    /* Shape */
+    --r-sm: 0.25rem;
+    --r-md: 0.5rem;
+    --r-lg: 1rem;
+    --r-xl: 1.5rem;
+    --r-full: 9999px;
+
+    /* Layout */
+    --container-max: 1280px;
+    --gutter: 24px;
+    --margin-mobile: 16px;
+    --margin-desktop: 48px;
+    --stack-md: 24px;
+    --stack-lg: 48px;
 }
 
-header {
+/* =====================================================================
+   Reset & base
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: "Be Vietnam Pro", "Segoe UI", Tahoma, Arial, sans-serif;
+    background: var(--surface);
+    color: var(--on-surface);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Subtle warm gradient backdrop for "buttery cream" feel */
+    background-image:
+        radial-gradient(1200px 600px at 100% -10%, rgba(255, 159, 28, 0.08), transparent 60%),
+        radial-gradient(900px 500px at -10% 20%, rgba(93, 58, 26, 0.06), transparent 55%);
+    background-attachment: fixed;
+}
+
+.page {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 32px var(--margin-desktop) 64px;
+}
+
+@media (max-width: 768px) {
+    .page { padding: 20px var(--margin-mobile) 48px; }
+}
+
+/* =====================================================================
+   Typography — Epilogue headlines, Be Vietnam Pro body
+   ===================================================================== */
+h1, h2, h3, h4 {
+    font-family: "Epilogue", "Be Vietnam Pro", "Segoe UI", sans-serif;
+    color: var(--on-surface);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 40px;
+    letter-spacing: -0.02em;
+}
+
+@media (max-width: 768px) {
+    h1 { font-size: 26px; line-height: 34px; }
+}
+
+h2 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+}
+
+code {
+    font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    padding: 2px 8px;
+    border-radius: var(--r-sm);
+    background: var(--surface-container-high);
+    color: var(--on-primary-container);
+}
+
+/* =====================================================================
+   Header
+   ===================================================================== */
+header.app-header {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 0;
-    border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 24px;
+    gap: 16px;
+    padding: 24px 28px;
+    margin-bottom: var(--stack-lg);
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-1);
+    position: relative;
+    overflow: hidden;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 24px;
-    color: #1e293b;
+header.app-header::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--primary-strong) 100%);
+    border-start-start-radius: var(--r-xl);
+    border-end-start-radius: var(--r-xl);
 }
 
-.filters {
+header.app-header h1 {
     display: flex;
+    align-items: center;
     gap: 12px;
-    align-items: end;
-    flex-wrap: wrap;
 }
 
-.filters label {
-    display: flex;
-    flex-direction: column;
-    font-size: 13px;
-    color: #475569;
-    gap: 4px;
+header.app-header h1::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: var(--r-full);
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(255, 159, 28, 0.18);
 }
 
-.filters input[type="date"] {
-    padding: 6px 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: white;
+header.app-header .sub {
+    color: var(--on-surface-variant);
+    font-size: 14px;
+    margin: 4px 0 0;
 }
 
-.filters button {
-    padding: 8px 16px;
-    border: none;
-    background: #2563eb;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.filters .reset {
-    padding: 8px 12px;
-    text-decoration: none;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-}
-
+/* =====================================================================
+   Summary cards
+   ===================================================================== */
 .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--gutter);
+    margin-bottom: var(--stack-lg);
 }
 
 .card {
-    background: white;
-    padding: 18px 20px;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    background: var(--surface-container-lowest);
+    padding: 24px;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--outline-variant);
+    box-shadow: var(--shadow-1);
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    border-top: 4px solid #94a3b8;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-.card.sale { border-top-color: #2563eb; }
-.card.cost { border-top-color: #dc2626; }
-.card.profit { border-top-color: #16a34a; }
+.card:hover {
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+}
+
+.card::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    width: 56px;
+    height: 4px;
+    background: var(--outline-variant);
+    border-end-end-radius: var(--r-full);
+}
+
+.card.sale::after   { background: var(--accent); }
+.card.cost::after   { background: var(--primary-strong); }
+.card.profit::after { background: var(--gold); }
 
 .card .label {
-    font-size: 13px;
-    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
 }
 
 .card .value {
-    font-size: 22px;
+    font-family: "Epilogue", sans-serif;
+    font-size: 28px;
     font-weight: 700;
-    color: #0f172a;
+    line-height: 36px;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
 }
 
 .card .sub {
     font-size: 14px;
-    color: #475569;
+    color: var(--on-surface-variant);
 }
 
+/* =====================================================================
+   Charts
+   ===================================================================== */
 .charts {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: var(--gutter);
+    margin-bottom: var(--stack-lg);
 }
 
 .chart-box {
-    background: white;
-    padding: 16px;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    background: var(--surface-container-lowest);
+    padding: 24px;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--outline-variant);
+    box-shadow: var(--shadow-1);
 }
 
 .chart-box h2 {
-    margin: 0 0 12px;
-    font-size: 16px;
-    color: #1e293b;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.chart-box h2::before {
+    content: "";
+    width: 8px;
+    height: 24px;
+    border-radius: var(--r-sm);
+    background: linear-gradient(180deg, var(--accent), var(--primary-strong));
+}
+
+/* =====================================================================
+   Tables
+   ===================================================================== */
 .table-box {
-    background: white;
-    padding: 16px;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-    margin-bottom: 20px;
+    background: var(--surface-container-lowest);
+    padding: 24px;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--outline-variant);
+    box-shadow: var(--shadow-1);
+    margin-bottom: var(--stack-md);
     overflow-x: auto;
 }
 
 .table-box h2 {
-    margin: 0 0 12px;
-    font-size: 16px;
-    color: #1e293b;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-box h2::before {
+    content: "";
+    width: 8px;
+    height: 24px;
+    border-radius: var(--r-sm);
+    background: linear-gradient(180deg, var(--accent), var(--primary-strong));
 }
 
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 14px;
 }
 
 th, td {
-    padding: 10px 12px;
+    padding: 14px 16px;
     text-align: right;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--outline-variant);
     white-space: nowrap;
 }
 
-th {
-    background: #f8fafc;
-    color: #475569;
-    font-weight: 600;
+thead th {
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    font-family: "Be Vietnam Pro", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--outline-variant);
+    position: sticky;
+    top: 0;
 }
 
-tbody tr:hover { background: #f8fafc; }
+thead th:first-child { border-start-start-radius: var(--r-md); }
+thead th:last-child  { border-start-end-radius: var(--r-md); }
 
-.pos { color: #15803d; font-weight: 600; }
-.neg { color: #b91c1c; font-weight: 600; }
-
-.btn {
-    display: inline-block;
-    padding: 6px 14px;
-    background: #2563eb;
-    color: white;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 13px;
+tbody tr {
+    transition: background 0.15s ease;
 }
-.btn:hover { background: #1d4ed8; }
 
-.group-usd { background: #eff6ff; color: #1e40af; }
-.group-iqd { background: #fef3c7; color: #92400e; }
+tbody tr:hover {
+    background: var(--surface-container-low);
+}
 
-.desc {
-    max-width: 280px;
-    white-space: normal;
-    text-align: right;
-    font-size: 13px;
+tbody td {
+    color: var(--on-surface);
 }
 
 tfoot th {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--surface-container-high);
+    color: var(--on-surface);
     font-weight: 700;
+    border-top: 2px solid var(--primary-strong);
 }
 
-header .sub {
-    color: #64748b;
+tfoot th:first-child { border-end-start-radius: var(--r-md); }
+tfoot th:last-child  { border-end-end-radius: var(--r-md); }
+
+/* Positive / negative semantic chips */
+.pos, .neg {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--r-full);
+    font-weight: 600;
     font-size: 13px;
+    line-height: 1.4;
+}
+
+.pos {
+    color: var(--positive);
+    background: var(--positive-soft);
+}
+
+.neg {
+    color: var(--negative);
+    background: var(--negative-soft);
+}
+
+/* Currency-grouped header chips (USD / IQD) */
+.group-usd, .group-iqd {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.group-usd {
+    background: rgba(255, 159, 28, 0.14);
+    color: #7a4a00;
+}
+
+.group-iqd {
+    background: rgba(93, 58, 26, 0.10);
+    color: var(--primary-strong);
+}
+
+.desc {
+    max-width: 320px;
+    white-space: normal;
+    text-align: right;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+}
+
+/* =====================================================================
+   Buttons
+   ===================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(67, 36, 6, 0.10);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(255, 159, 28, 0.28),
+                0 2px 4px rgba(67, 36, 6, 0.10);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-1);
+}
+
+.btn--ghost {
+    background: var(--surface-container-lowest);
+    color: var(--primary-strong);
+    border-color: var(--outline-variant);
+    box-shadow: none;
+}
+
+.btn--ghost:hover {
+    background: var(--surface-container-low);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-1);
 }
