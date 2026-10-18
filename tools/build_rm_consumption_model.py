@@ -82,8 +82,8 @@ sum_hdrs = [
     "متوسط الاستهلاك الشهري الفعلي كمية\nAvg Monthly Out Qty",
     "متوسط كلفة الاستهلاك الشهري\nAvg Monthly Out Cost",
     "متوسط كلفة الوحدة الفعلية 9 أشهر\nActual Avg Unit Cost 9M",
-    "كلفة الوحدة المعيارية في النظام\nStd Unit Cost (ItemUnitCost M09)",
-    "الفرق % بين الفعلية والمعيارية\nActual vs Std %",
+    "كلفة الوحدة الجارية في النظام عند التصدير\nCurrent Unit Cost in System (ItemUnitCost)",
+    "فجوة الكلفة الفعلية 9 أشهر مقابل الجارية %\nActual 9M vs Current Unit Cost %",
     "معدل الاستهلاك الشهري في النظام\nSystem ConsMonRate9 (M09)",
     "الفرق بين معدلنا ومعدل النظام\nOur Rate - System Rate",
     "عدد الأشهر التي فيها حركة إخراج\nMonths with Out Movement",
@@ -91,6 +91,37 @@ sum_hdrs = [
     "شهور التغطية\nCoverage Months",
     "تدقيق (يجب أن يكون 0)\nCheck (=0)",
 ]
+AMT = "#,##0.00"
+UNIT = "0.0000"
+PCT = "0.0%"
+# ---- out-flow breakdown block (added after the critique: "total out" is not "consumption") ----
+S.update(RetRecQty="N", SaleQty="O", SubQty="P", IssueQty="Q", WriteOffQty="R", ConsQty9M="Y")
+FILL_X = PatternFill("solid", fgColor="E4DFEC")
+BRK_COL = SUM_COL + len(sum_hdrs)  # first column of the breakdown block
+brk_hdrs = [
+    "صرف الإنتاج 9 أشهر كمية\nIssueQty 9M",
+    "بيع مواد خام 9 أشهر كمية\nSaleQty 9M",
+    "تسويات جرد بالنقص 9 أشهر كمية\nSubQty 9M",
+    "مرتجعات للمورد 9 أشهر كمية\nRetRecQty 9M",
+    "شطب 9 أشهر كمية\nWriteOffQty 9M",
+    "تدقيق التفصيل (يجب أن يكون 0)\nBreakdown Check (=0)",
+    "استهلاك 9 أشهر حسب النظام\nSystem ConsQty9M (M09)",
+    "صرف الإنتاج − استهلاك النظام\nIssue 9M - System ConsQty9M",
+    "متوسط صرف الإنتاج الشهري 9 أشهر\nAvg Monthly Issue 9M",
+    "متوسط صرف الإنتاج آخر 3 أشهر (تموز-أيلول)\nAvg Monthly Issue Jul-Sep",
+    "شهور التغطية بمعدل آخر 3 أشهر\nCoverage Months (Jul-Sep rate)",
+    "كلفة صرف الإنتاج 9 أشهر (تقديرية)\nIssue Cost 9M (est.)",
+]
+fmt_brk = [AMT, AMT, AMT, AMT, AMT, AMT, AMT, AMT, AMT, AMT, "0.00", AMT]
+# ---- purchases block: monthly purchase unit price (Purchase Amount / RecQty) ----
+FILL_P = PatternFill("solid", fgColor="FCE4D6")
+PB_COL = BRK_COL + len(brk_hdrs)
+pb_hdrs = [f"سعر الشراء للوحدة {MONTH_NAMES[m-1]}\nPurchase Unit Price M{m:02d}" for m in range(1, NM + 1)] + [
+    "مجموع كمية الشراء 9 أشهر\nRecQty 9M",
+    "مجموع قيمة الشراء 9 أشهر\nPurchase Amount 9M",
+    "متوسط سعر الشراء الموزون 9 أشهر\nWeighted Avg Purchase Price 9M",
+]
+fmt_pb = [UNIT] * NM + [AMT, AMT, UNIT]
 # header rows
 ws.cell(row=1, column=1, value="بيانات المادة / Item")
 ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=3)
@@ -111,7 +142,18 @@ for off, h in enumerate(sum_hdrs):
     f = FILL_K if off == len(sum_hdrs) - 1 else FILL_S
     ws.cell(row=2, column=SUM_COL + off, value=h).fill = f
     ws.cell(row=1, column=SUM_COL + off).fill = f
-for c in range(1, SUM_COL + len(sum_hdrs)):
+ws.cell(row=1, column=BRK_COL, value="تحليل الإخراج 9 أشهر: الاستهلاك مقابل باقي أنواع الإخراج / 9-Month Out-flow Breakdown")
+ws.merge_cells(start_row=1, start_column=BRK_COL, end_row=1, end_column=BRK_COL + len(brk_hdrs) - 1)
+for off, h in enumerate(brk_hdrs):
+    f = FILL_K if off == 5 else FILL_X
+    ws.cell(row=2, column=BRK_COL + off, value=h).fill = f
+    ws.cell(row=1, column=BRK_COL + off).fill = f
+ws.cell(row=1, column=PB_COL, value="المشتريات: سعر الشراء للوحدة شهرياً (Purchase Amount ÷ RecQty) / Purchases")
+ws.merge_cells(start_row=1, start_column=PB_COL, end_row=1, end_column=PB_COL + len(pb_hdrs) - 1)
+for off, h in enumerate(pb_hdrs):
+    ws.cell(row=2, column=PB_COL + off, value=h).fill = FILL_P
+    ws.cell(row=1, column=PB_COL + off).fill = FILL_P
+for c in range(1, PB_COL + len(pb_hdrs)):
     for r in (1, 2):
         cell = ws.cell(row=r, column=c)
         cell.font = hdr_font
@@ -119,9 +161,6 @@ for c in range(1, SUM_COL + len(sum_hdrs)):
         cell.border = border
 ws.row_dimensions[2].height = 60
 
-AMT = "#,##0.00"
-UNIT = "0.0000"
-PCT = "0.0%"
 fmt_month = [AMT, AMT, UNIT, AMT, AMT, UNIT, AMT, AMT, UNIT, AMT, AMT, UNIT]
 fmt_sum = [AMT, AMT, AMT, AMT, UNIT, UNIT, PCT, AMT, AMT, "0", AMT, "0.00", AMT]
 
@@ -190,9 +229,47 @@ for r in range(2, LAST + 1):
         cell.number_format = fmt_sum[o]
     if r == 2:
         representative["summary"] = fs
+    # out-flow breakdown (source out columns are negative; shown positive)
+    def ssum(col, months=range(1, NM + 1)):
+        return "-SUM(" + ",".join(f"'M{m:02d}'!{S[col]}{r}" for m in months) + ")"
+    bc = [f"{L(BRK_COL + o)}{R}" for o in range(len(brk_hdrs))]
+    iss, sal, sub, rtv, wof, bchk, sysq, dif, aiss, a3, cov3, isc = bc
+    issue_cost = "+".join(
+        f"IFERROR({L(bcol(m, 7))}{R}*(-'M{m:02d}'!{S['IssueQty']}{r})/{L(bcol(m, 6))}{R},0)" for m in range(1, NM + 1))
+    fb = [
+        f"={ssum('IssueQty')}",
+        f"={ssum('SaleQty')}",
+        f"={ssum('SubQty')}",
+        f"={ssum('RetRecQty')}",
+        f"={ssum('WriteOffQty')}",
+        f"={iss}+{sal}+{sub}+{rtv}+{wof}-{tq}",
+        f"='M{NM:02d}'!{S['ConsQty9M']}{r}",
+        f"={iss}-{sysq}",
+        f"={iss}/{NM}",
+        f"={ssum('IssueQty', range(NM - 2, NM + 1))}/3",
+        f"=IFERROR({eqs}/{a3},0)",
+        f"={issue_cost}",
+    ]
+    for o, fx in enumerate(fb):
+        cell = ws.cell(row=R, column=BRK_COL + o, value=fx)
+        cell.number_format = fmt_brk[o]
+    if r == 2:
+        representative["breakdown"] = fb
+    # purchases: monthly unit purchase price and 9-month totals
+    pc = [f"{L(PB_COL + o)}{R}" for o in range(len(pb_hdrs))]
+    fp = [f"=IFERROR('M{m:02d}'!{S['PurchAmt']}{r}/'M{m:02d}'!{S['RecQty']}{r},0)" for m in range(1, NM + 1)] + [
+        "=SUM(" + ",".join(f"'M{m:02d}'!{S['RecQty']}{r}" for m in range(1, NM + 1)) + ")",
+        "=SUM(" + ",".join(f"'M{m:02d}'!{S['PurchAmt']}{r}" for m in range(1, NM + 1)) + ")",
+        f"=IFERROR({pc[NM + 1]}/{pc[NM]},0)",
+    ]
+    for o, fx in enumerate(fp):
+        cell = ws.cell(row=R, column=PB_COL + o, value=fx)
+        cell.number_format = fmt_pb[o]
+    if r == 2:
+        representative["purchases"] = fp
 
 ws.freeze_panes = "D3"
-ws.auto_filter.ref = f"A2:{L(SUM_COL + len(sum_hdrs) - 1)}{MODEL_LAST}"
+ws.auto_filter.ref = f"A2:{L(PB_COL + len(pb_hdrs) - 1)}{MODEL_LAST}"
 ws.column_dimensions["A"].width = 16
 ws.column_dimensions["B"].width = 32
 ws.column_dimensions["C"].width = 10
@@ -200,6 +277,10 @@ for c in range(FIRST_BLOCK_COL, SUM_COL + len(sum_hdrs)):
     ws.column_dimensions[L(c)].width = 14
 for o in range(len(sum_hdrs)):
     ws.column_dimensions[L(SUM_COL + o)].width = 16
+for o in range(len(brk_hdrs)):
+    ws.column_dimensions[L(BRK_COL + o)].width = 16
+for o in range(len(pb_hdrs)):
+    ws.column_dimensions[L(PB_COL + o)].width = 14
 
 # ---------- 3. Summary per SubCateg ----------
 cats = sorted({v for v in (wb["M01"].cell(row=r, column=1).value for r in range(2, LAST + 1)) if v is not None})
@@ -250,24 +331,30 @@ notes = [
     ("", ""),
     ("قواعد الكلفة:", "Cost rules:"),
     ("كلفة وحدة البداية = IFERROR(OpenCost / OpenQty, 0)", "Open unit cost = IFERROR(OpenCost / OpenQty, 0)"),
-    ("كلفة الإدخال = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC) حيث UC = كلفة الوحدة الافتتاحية OpenCost/OpenQty إن وُجد رصيد افتتاحي مقيَّم، وإلا ItemUnitCost المعيارية. أي: المشتريات بقيمة الشراء الفعلية، وباقي الإدخالات (تسويات AddQty، استلام إنتاج ProdRecQty، مرتجعات) بكلفة الوحدة الافتتاحية.",
-     "InCost = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC), where UC = opening unit cost OpenCost/OpenQty when a valued opening balance exists, else the standard ItemUnitCost. I.e. purchases at actual purchase value; all other inflows (AddQty adjustments, ProdRecQty production receipts, returns) at the opening unit cost."),
+    ("كلفة الإدخال = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC) حيث UC = كلفة الوحدة الافتتاحية OpenCost/OpenQty إن وُجد رصيد افتتاحي مقيَّم، وإلا ItemUnitCost الجارية. أي: المشتريات بقيمة الشراء الفعلية، وباقي الإدخالات (تسويات AddQty، استلام إنتاج ProdRecQty، مرتجعات) بكلفة الوحدة الافتتاحية.",
+     "InCost = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC), where UC = opening unit cost OpenCost/OpenQty when a valued opening balance exists, else the current ItemUnitCost. I.e. purchases at actual purchase value; all other inflows (AddQty adjustments, ProdRecQty production receipts, returns) at the opening unit cost."),
     ("تحذير: كلفة الإدخال غير الشرائي تقدير؛ النظام لا يصدّر قيمتها. وكلفة الإخراج رقم موازنة يمتص أيضاً أي إعادة تقييم أو تصحيح كلفة أجراه النظام في الشهر، لذلك قد تظهر كلفة إخراج سالبة أو كلفة بلا كمية في حالات نادرة (راجع تقرير التدقيق).",
      "Caveat: the cost of non-purchase inflows is an estimate; the system does not export it. OutCost is a balancing figure and therefore also absorbs any revaluation or cost correction the system booked in the month, so a negative OutCost, or a cost with zero quantity, can appear in rare cases (see the audit report)."),
-    ("كلفة الإخراج = OpenCost + InCost − EndCost (رقم موازنة = الكلفة الفعلية بالمتوسط المتحرك لما خرج من المخزون).",
-     "OutCost = OpenCost + InCost − EndCost (balancing figure = actual moving-average cost of what left stock)."),
+    ("كلفة الإخراج = OpenCost + InCost − EndCost (رقم موازنة = الكلفة التي حمّلها النظام على ما خرج من المخزون، من طبقاته أو مستودعاته).",
+     "OutCost = OpenCost + InCost − EndCost (balancing figure = the cost the system charged to what left stock, from its layers / warehouses)."),
     ("كلفة وحدة الإخراج = IFERROR(OutCost / OutQty, 0)؛ كلفة وحدة النهاية = IFERROR(EndCost / EndQty, 0).",
      "Out unit cost = IFERROR(OutCost / OutQty, 0); End unit cost = IFERROR(EndCost / EndQty, 0)."),
     ("", ""),
     ("ملاحظات:", "Notes:"),
     ("TotalOutQty سالب في ملفات المصدر؛ يُعرض في النموذج بقيمة موجبة (= −TotalOutQty).",
      "TotalOutQty is negative in the source files; the model shows it as a positive quantity (= −TotalOutQty)."),
-    ("ItemUnitCost في النظام كلفة معيارية ثابتة عبر الأشهر وليست الكلفة الفعلية؛ الكلفة الفعلية للوحدة = الكلفة ÷ الكمية.",
-     "ItemUnitCost in the system is a constant standard cost across months, NOT actual; actual unit cost = Cost / Qty."),
+    ("ItemUnitCost في ملفات المصدر هو كلفة الوحدة الجارية في بطاقة المادة لحظة التصدير: متطابق في الملفات التسعة، ويساوي كلفة نهاية أيلول في 271 من 272 مادة لها رصيد. ليس كلفة معيارية مجمّدة؛ لذلك عمود «فجوة الكلفة الفعلية مقابل الجارية %» يقرأ اتجاه الأسعار (كلفة الاستبدال) لا انحرافاً معيارياً. الكلفة الفعلية للوحدة = الكلفة ÷ الكمية.",
+     "ItemUnitCost in the source files is the item master's CURRENT unit cost at export time: identical in all nine files and equal to the September closing unit cost for 271 of 272 items with stock. It is not a frozen standard cost; the “Actual 9M vs Current Unit Cost %” column therefore reads as a price-trend / replacement-cost gap, not a standard-cost variance. Actual unit cost = Cost / Qty."),
+    ("طريقة التكلفة في النظام ليست متوسطاً متحركاً واحداً: في 126 من 1,936 شهر-مادة بلا أي إدخال تغيّرت كلفة الوحدة أكثر من 1%، وهو سلوك FIFO بطبقات أو متوسط لكل مستودع. لذلك كلفة الإخراج الشهرية قد تتأخر طبقةً عن سعر الشراء الأخير.",
+     "The ERP's costing is not a single moving average: in 126 of 1,936 item-months with no inflow the unit cost still changed by more than 1%, which is FIFO-layer or per-warehouse-average behaviour. Monthly OutCost can therefore lag the latest purchase price by a layer."),
     ("الخلايا الفارغة في المصدر تُعامل كصفر في الصيغ.", "Blank numeric cells in the source are treated as 0 by the formulas."),
     ("عمود التدقيق Check = OpenQty(M01) + مجموع الإدخال 9 أشهر − مجموع الإخراج 9 أشهر − EndQty(M09) ويجب أن يساوي صفراً لكل مادة.",
      "Check column = OpenQty(M01) + SUM(9 in qty) − SUM(9 out qty) − EndQty(M09); must be 0 for every item."),
     ("شهور التغطية = رصيد نهاية أيلول ÷ متوسط الإخراج الشهري الفعلي.", "Coverage months = EndQty Sep / actual average monthly out qty."),
+    ("كتلة «تحليل الإخراج 9 أشهر»: مجموع الإخراج TotalOutQty = صرف الإنتاج IssueQty + بيع مواد خام SaleQty + تسويات جرد بالنقص SubQty + مرتجعات للمورد RetRecQty + شطب WriteOffQty. الاستهلاك الحقيقي للإنتاج هو IssueQty وحده؛ لذلك تُعرض كل مكوّنة على حدة، مع معدل صرف الإنتاج لتسعة أشهر ولآخر ثلاثة أشهر، والتغطية بمعدل آخر ثلاثة أشهر، ومقارنة مع ConsQty9M في النظام (الذي يستثني بعض حركات الصرف غير المعنونة في التصدير). كلفة صرف الإنتاج تقدير = كلفة الإخراج الشهرية × (IssueQty ÷ TotalOutQty) لكل شهر.",
+     "“9-Month Out-flow Breakdown” block: TotalOutQty = IssueQty (production issues) + SaleQty (raw-material sales) + SubQty (negative stock adjustments) + RetRecQty (returns to vendor) + WriteOffQty. True production consumption is IssueQty alone, so each component is shown separately, with the 9-month and the last-3-month (Jul–Sep) issue rates, coverage on the last-3-month rate, and a comparison with the system's ConsQty9M (which excludes some issue transactions the export does not label). Issue cost is an estimate = monthly OutCost × (IssueQty ÷ TotalOutQty) per month."),
+    ("كتلة «المشتريات»: سعر الشراء للوحدة في كل شهر = Purchase Amount ÷ RecQty (صفر إذا لم يكن هناك استلام شراء أو كانت قيمة الشراء صفراً)، مع مجموع كمية وقيمة الشراء لتسعة أشهر ومتوسط السعر الموزون. تنبيه: بعض استلامات آذار شحنات قديمة بتواريخ شراء 2023–2025 وبعض الاستلامات من مستودعات داخلية، فسعر شهر واحد قد لا يمثّل سعر السوق.",
+     "“Purchases” block: monthly purchase unit price = Purchase Amount ÷ RecQty (0 when there was no purchase receipt or the amount is 0), plus 9-month purchased quantity, purchase value and weighted average price. Caution: some March receipts are old shipments dated 2023–2025 and some receipts come from internal warehouses, so a single month's price may not reflect the market."),
     ("ورقة Summary: إجماليات لكل فئة فرعية SubCateg بصيغ SUMIF/COUNTIF على ورقة Model.",
      "Summary sheet: per-SubCateg totals via SUMIF/COUNTIF formulas on the Model sheet."),
     ("تحذير: النموذج يعتمد على بقاء ترتيب الصفوف متطابقاً في الأوراق M01..M09؛ لا تقم بالفرز أو الحذف داخلها، وأي خلل سيظهر فوراً في عمود Check.",
@@ -288,7 +375,7 @@ rd.column_dimensions["B"].width = 90
 
 wb.save(OUT)
 print("saved", OUT)
-print("rows:", LAST, "summary first col:", L(SUM_COL), "last col:", L(SUM_COL + len(sum_hdrs) - 1))
+print("rows:", LAST, "summary first col:", L(SUM_COL), "last col:", L(SUM_COL + len(sum_hdrs) - 1), "breakdown:", L(BRK_COL), "-", L(BRK_COL + len(brk_hdrs) - 1), "purchases:", L(PB_COL), "-", L(PB_COL + len(pb_hdrs) - 1))
 print("block ranges:", [(f"M{m:02d}", L(bcol(m,0)), L(bcol(m,11))) for m in range(1, NM+1)])
 print("REPRESENTATIVE month2 row2:"); [print("  ", x) for x in representative["month2"]]
 print("REPRESENTATIVE summary row2:"); [print("  ", x) for x in representative["summary"]]
