@@ -137,6 +137,8 @@ Planning view in brief: the 9-month flat average overstates the current run-rate
 2. **كتلة "تحليل الإخراج 9 أشهر" (الأعمدة DU إلى EF):** صرف الإنتاج IssueQty، بيع مواد خام SaleQty، تسويات جرد بالنقص SubQty، مرتجعات للمورد RetRecQty، شطب WriteOffQty، عمود تدقيق للتفصيل (= 0)، استهلاك النظام ConsQty9M والفرق عنه، متوسط صرف الإنتاج الشهري لتسعة أشهر ولآخر ثلاثة أشهر، التغطية بمعدل آخر ثلاثة أشهر، وكلفة صرف الإنتاج التقديرية. إجمالي صرف الإنتاج 17,387,506 وحدة من إجمالي إخراج 17,906,790؛ استهلاك النظام 16,444,234.
 3. **كتلة "المشتريات" (الأعمدة EG إلى ER):** سعر الشراء للوحدة في كل شهر (Purchase Amount ÷ RecQty)، مجموع كمية وقيمة الشراء لتسعة أشهر (12,610,788 وحدة؛ 24,344,453)، ومتوسط السعر الموزون.
    Added after the critique: relabelled current-cost columns; a 9-month out-flow breakdown block (DU:EF) separating production issues from sales, adjustments, vendor returns and write-offs, with a last-3-month rate and coverage; and a purchases block (EG:ER) with monthly purchase unit prices.
+4. **تدقيق ثالث بعد الإضافات (المدقق أ):** أُعيد حساب الكتلتين الجديدتين (24 عموداً × 562 مادة) من ملفات المصدر بشكل مستقل: صفر فروقات، عمود تدقيق التفصيل يساوي صفراً لكل المواد، والأعمدة السابقة A:DT لم تتغير قيمةً ولا معادلة (تغيّر عنوانا DM وDN فقط). الإجماليات: صرف إنتاج 17,387,506؛ بيع 244,409؛ تسويات 205,346؛ مرتجعات 56,716؛ شطب 12,814؛ مجموعها يساوي إجمالي الإخراج 17,906,790 تماماً. استهلاك النظام ConsQty9M يختلف عن صرف الإنتاج في 66 مادة بصافي 943,272 وحدة.
+   Third audit after the additions: the 24 new columns recompute from source with zero mismatches, the breakdown check is zero for every item, and columns A:DT are unchanged in value and formula.
 
 ## 6. توصيات لم تُنفَّذ في هذا الإصدار / Recommendations deferred to the next version
 
