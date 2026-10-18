@@ -2,147 +2,192 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>داش بورد المبيعات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <header>
-        <h1>داش بورد المبيعات والكلفة</h1>
-        <p class="sub">قراءة الفواتير من <code>data/*.xlsx</code></p>
-    </header>
+    <div class="page">
+        <header class="app-header">
+            <div>
+                <h1>داش بورد المبيعات والكلفة</h1>
+                <p class="sub">قراءة الفواتير من <code>data/*.xlsx</code></p>
+            </div>
+        </header>
 
-    <section class="cards">
-        <div class="card">
-            <span class="label">عدد الفواتير</span>
-            <span class="value">{{ totals.count }}</span>
-        </div>
-        <div class="card sale">
-            <span class="label">إجمالي قيمة البيع</span>
-            <span class="value">${{ '{:,.2f}'.format(totals.usd_value) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(totals.iqd_value) }} د.ع (ألف)</span>
-        </div>
-        <div class="card cost">
-            <span class="label">إجمالي الكلفة</span>
-            <span class="value">${{ '{:,.2f}'.format(totals.usd_cost) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(totals.iqd_cost) }} د.ع (ألف)</span>
-        </div>
-        <div class="card profit">
-            <span class="label">إجمالي الربح ({{ '{:.1%}'.format(totals.usd_margin_pct) }})</span>
-            <span class="value">${{ '{:,.2f}'.format(totals.usd_margin) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(totals.iqd_margin) }} د.ع (ألف)</span>
-        </div>
-    </section>
+        <section class="cards">
+            <div class="card">
+                <span class="label">عدد الفواتير</span>
+                <span class="value">{{ totals.count }}</span>
+            </div>
+            <div class="card sale">
+                <span class="label">إجمالي قيمة البيع</span>
+                <span class="value">${{ '{:,.2f}'.format(totals.usd_value) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(totals.iqd_value) }} د.ع (ألف)</span>
+            </div>
+            <div class="card cost">
+                <span class="label">إجمالي الكلفة</span>
+                <span class="value">${{ '{:,.2f}'.format(totals.usd_cost) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(totals.iqd_cost) }} د.ع (ألف)</span>
+            </div>
+            <div class="card profit">
+                <span class="label">إجمالي الربح ({{ '{:.1%}'.format(totals.usd_margin_pct) }})</span>
+                <span class="value">${{ '{:,.2f}'.format(totals.usd_margin) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(totals.iqd_margin) }} د.ع (ألف)</span>
+            </div>
+        </section>
 
-    {% if chart.labels %}
-    <section class="charts">
-        <div class="chart-box">
-            <h2>المبيعات والكلفة اليومية (دولار)</h2>
-            <canvas id="chartUsd"></canvas>
-        </div>
-        <div class="chart-box">
-            <h2>المبيعات والكلفة اليومية (دينار)</h2>
-            <canvas id="chartIqd"></canvas>
-        </div>
-    </section>
-    {% endif %}
+        {% if chart.labels %}
+        <section class="charts">
+            <div class="chart-box">
+                <h2>المبيعات والكلفة اليومية (دولار)</h2>
+                <canvas id="chartUsd"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>المبيعات والكلفة اليومية (دينار)</h2>
+                <canvas id="chartIqd"></canvas>
+            </div>
+        </section>
+        {% endif %}
 
-    <section class="table-box">
-        <h2>قائمة الفواتير</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>رقم الطلب</th>
-                    <th>التاريخ</th>
-                    <th>العميل</th>
-                    <th>عدد الأصناف</th>
-                    <th>قيمة البيع $</th>
-                    <th>الكلفة $</th>
-                    <th>الربح $</th>
-                    <th>الربح %</th>
-                    <th>قيمة البيع د.ع</th>
-                    <th>الكلفة د.ع</th>
-                    <th>الربح د.ع</th>
-                    <th>التفاصيل</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for inv in invoices %}
-                <tr>
-                    <td>{{ inv.order_no }}</td>
-                    <td>{{ inv.order_date }}</td>
-                    <td>{{ inv.customer }}</td>
-                    <td>{{ inv.lines|length }}</td>
-                    <td>${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</td>
-                    <td>${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</td>
-                    <td class="pos">${{ '{:,.2f}'.format(inv.total.usd.margin) }}</td>
-                    <td>{{ '{:.1%}'.format(inv.total.usd.margin_pct) }}</td>
-                    <td>{{ '{:,.2f}'.format(inv.total.iqd.total_value) }}</td>
-                    <td>{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }}</td>
-                    <td class="pos">{{ '{:,.2f}'.format(inv.total.iqd.margin) }}</td>
-                    <td><a class="btn" href="{{ url_for('invoice_detail', file_name=inv.file) }}">عرض</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
+        <section class="table-box">
+            <h2>قائمة الفواتير</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>التاريخ</th>
+                        <th>العميل</th>
+                        <th>عدد الأصناف</th>
+                        <th>قيمة البيع $</th>
+                        <th>الكلفة $</th>
+                        <th>الربح $</th>
+                        <th>الربح %</th>
+                        <th>قيمة البيع د.ع</th>
+                        <th>الكلفة د.ع</th>
+                        <th>الربح د.ع</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td>{{ inv.order_no }}</td>
+                        <td>{{ inv.order_date }}</td>
+                        <td>{{ inv.customer }}</td>
+                        <td>{{ inv.lines|length }}</td>
+                        <td>${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</td>
+                        <td>${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</td>
+                        <td><span class="pos">${{ '{:,.2f}'.format(inv.total.usd.margin) }}</span></td>
+                        <td>{{ '{:.1%}'.format(inv.total.usd.margin_pct) }}</td>
+                        <td>{{ '{:,.2f}'.format(inv.total.iqd.total_value) }}</td>
+                        <td>{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }}</td>
+                        <td><span class="pos">{{ '{:,.2f}'.format(inv.total.iqd.margin) }}</span></td>
+                        <td><a class="btn" href="{{ url_for('invoice_detail', file_name=inv.file) }}">عرض</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
 
-    <section class="table-box">
-        <h2>الملخص اليومي</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>التاريخ</th>
-                    <th>عدد الفواتير</th>
-                    <th>مبيعات $</th>
-                    <th>كلفة $</th>
-                    <th>ربح $</th>
-                    <th>مبيعات د.ع</th>
-                    <th>كلفة د.ع</th>
-                    <th>ربح د.ع</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in daily_rows %}
-                <tr>
-                    <td>{{ row.date }}</td>
-                    <td>{{ row.invoices }}</td>
-                    <td>${{ '{:,.2f}'.format(row.usd_value) }}</td>
-                    <td>${{ '{:,.2f}'.format(row.usd_cost) }}</td>
-                    <td class="pos">${{ '{:,.2f}'.format(row.usd_margin) }}</td>
-                    <td>{{ '{:,.2f}'.format(row.iqd_value) }}</td>
-                    <td>{{ '{:,.2f}'.format(row.iqd_cost) }}</td>
-                    <td class="pos">{{ '{:,.2f}'.format(row.iqd_margin) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
+        <section class="table-box">
+            <h2>الملخص اليومي</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>عدد الفواتير</th>
+                        <th>مبيعات $</th>
+                        <th>كلفة $</th>
+                        <th>ربح $</th>
+                        <th>مبيعات د.ع</th>
+                        <th>كلفة د.ع</th>
+                        <th>ربح د.ع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in daily_rows %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.invoices }}</td>
+                        <td>${{ '{:,.2f}'.format(row.usd_value) }}</td>
+                        <td>${{ '{:,.2f}'.format(row.usd_cost) }}</td>
+                        <td><span class="pos">${{ '{:,.2f}'.format(row.usd_margin) }}</span></td>
+                        <td>{{ '{:,.2f}'.format(row.iqd_value) }}</td>
+                        <td>{{ '{:,.2f}'.format(row.iqd_cost) }}</td>
+                        <td><span class="pos">{{ '{:,.2f}'.format(row.iqd_margin) }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
 
     {% if chart.labels %}
     <script id="chart-data" type="application/json">{{ chart | tojson }}</script>
     <script>
         const data = JSON.parse(document.getElementById('chart-data').textContent);
+        const palette = {
+            sale:   '#ff9f1c', /* Golden Orange */
+            cost:   '#5d3a1a', /* Artisan Brown */
+            profit: '#d4af37'  /* Burnished Gold */
+        };
         const baseOptions = {
             responsive: true,
-            plugins: { legend: { position: 'top' } },
-            scales: { y: { beginAtZero: true } }
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Be Vietnam Pro', weight: '600', size: 12 },
+                        color: '#28180d',
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#28180d',
+                    titleColor: '#fff8f5',
+                    bodyColor: '#fff8f5',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Be Vietnam Pro', weight: '700' },
+                    bodyFont: { family: 'Be Vietnam Pro' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(67, 36, 6, 0.08)' },
+                    ticks: { color: '#50453c', font: { family: 'Be Vietnam Pro' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#50453c', font: { family: 'Be Vietnam Pro' } }
+                }
+            }
         };
+        const barShape = { borderRadius: 6, borderSkipped: false, maxBarThickness: 36 };
         new Chart(document.getElementById('chartUsd'), {
             type: 'bar',
             data: { labels: data.labels, datasets: [
-                { label: 'مبيعات', data: data.usd_value, backgroundColor: '#2563eb' },
-                { label: 'كلفة', data: data.usd_cost, backgroundColor: '#dc2626' },
-                { label: 'ربح', data: data.usd_margin, backgroundColor: '#16a34a' }
+                { label: 'مبيعات', data: data.usd_value, backgroundColor: palette.sale,   ...barShape },
+                { label: 'كلفة',  data: data.usd_cost,  backgroundColor: palette.cost,   ...barShape },
+                { label: 'ربح',   data: data.usd_margin,backgroundColor: palette.profit, ...barShape }
             ]},
             options: baseOptions
         });
         new Chart(document.getElementById('chartIqd'), {
             type: 'bar',
             data: { labels: data.labels, datasets: [
-                { label: 'مبيعات', data: data.iqd_value, backgroundColor: '#2563eb' },
-                { label: 'كلفة', data: data.iqd_cost, backgroundColor: '#dc2626' },
-                { label: 'ربح', data: data.iqd_margin, backgroundColor: '#16a34a' }
+                { label: 'مبيعات', data: data.iqd_value, backgroundColor: palette.sale,   ...barShape },
+                { label: 'كلفة',  data: data.iqd_cost,  backgroundColor: palette.cost,   ...barShape },
+                { label: 'ربح',   data: data.iqd_margin,backgroundColor: palette.profit, ...barShape }
             ]},
             options: baseOptions
         });

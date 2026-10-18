@@ -2,92 +2,102 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>فاتورة {{ inv.order_no }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>فاتورة رقم {{ inv.order_no }}</h1>
-        <a class="btn" href="{{ url_for('dashboard') }}">← رجوع للداش بورد</a>
-    </header>
+    <div class="page">
+        <header class="app-header">
+            <div>
+                <h1>فاتورة رقم {{ inv.order_no }}</h1>
+                <p class="sub">عرض تفصيلي للأصناف والكلفة والربح</p>
+            </div>
+            <a class="btn btn--ghost" href="{{ url_for('dashboard') }}">← رجوع للداش بورد</a>
+        </header>
 
-    <section class="cards">
-        <div class="card">
-            <span class="label">العميل</span>
-            <span class="value" style="font-size:18px">{{ inv.customer }}</span>
-            <span class="sub">تاريخ الطلب: {{ inv.order_date }}</span>
-        </div>
-        <div class="card sale">
-            <span class="label">قيمة الفاتورة</span>
-            <span class="value">${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.total_value) }} د.ع (ألف)</span>
-        </div>
-        <div class="card cost">
-            <span class="label">الكلفة الإجمالية</span>
-            <span class="value">${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }} د.ع (ألف)</span>
-        </div>
-        <div class="card profit">
-            <span class="label">الربح ({{ '{:.1%}'.format(inv.total.usd.margin_pct) }})</span>
-            <span class="value">${{ '{:,.2f}'.format(inv.total.usd.margin) }}</span>
-            <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.margin) }} د.ع (ألف)</span>
-        </div>
-    </section>
+        <section class="cards">
+            <div class="card">
+                <span class="label">العميل</span>
+                <span class="value" style="font-size:20px; line-height:28px;">{{ inv.customer }}</span>
+                <span class="sub">تاريخ الطلب: {{ inv.order_date }}</span>
+            </div>
+            <div class="card sale">
+                <span class="label">قيمة الفاتورة</span>
+                <span class="value">${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.total_value) }} د.ع (ألف)</span>
+            </div>
+            <div class="card cost">
+                <span class="label">الكلفة الإجمالية</span>
+                <span class="value">${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }} د.ع (ألف)</span>
+            </div>
+            <div class="card profit">
+                <span class="label">الربح ({{ '{:.1%}'.format(inv.total.usd.margin_pct) }})</span>
+                <span class="value">${{ '{:,.2f}'.format(inv.total.usd.margin) }}</span>
+                <span class="sub">{{ '{:,.2f}'.format(inv.total.iqd.margin) }} د.ع (ألف)</span>
+            </div>
+        </section>
 
-    <section class="table-box">
-        <h2>أصناف الفاتورة</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th rowspan="2">رقم الصنف</th>
-                    <th rowspan="2">الوصف</th>
-                    <th rowspan="2">الكمية</th>
-                    <th colspan="5" class="group-usd">دولار $</th>
-                    <th colspan="4" class="group-iqd">دينار د.ع (ألف)</th>
-                </tr>
-                <tr>
-                    <th class="group-usd">سعر الوحدة</th>
-                    <th class="group-usd">كلفة الوحدة</th>
-                    <th class="group-usd">إجمالي البيع</th>
-                    <th class="group-usd">إجمالي الكلفة</th>
-                    <th class="group-usd">الربح</th>
-                    <th class="group-iqd">سعر الوحدة</th>
-                    <th class="group-iqd">كلفة الوحدة</th>
-                    <th class="group-iqd">إجمالي البيع</th>
-                    <th class="group-iqd">إجمالي الكلفة</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for it in inv.lines %}
-                <tr>
-                    <td>{{ it.item_no }}</td>
-                    <td class="desc">{{ it.desc }}</td>
-                    <td>{{ '{:,.0f}'.format(it.qty) }}</td>
-                    <td>${{ '{:,.4f}'.format(it.usd.unit_price) }}</td>
-                    <td>${{ '{:,.4f}'.format(it.usd.unit_cost) }}</td>
-                    <td>${{ '{:,.2f}'.format(it.usd.total_value) }}</td>
-                    <td>${{ '{:,.2f}'.format(it.usd.total_cost) }}</td>
-                    <td class="pos">${{ '{:,.2f}'.format(it.usd.margin) }}</td>
-                    <td>{{ '{:,.4f}'.format(it.iqd.unit_price) }}</td>
-                    <td>{{ '{:,.4f}'.format(it.iqd.unit_cost) }}</td>
-                    <td>{{ '{:,.2f}'.format(it.iqd.total_value) }}</td>
-                    <td>{{ '{:,.2f}'.format(it.iqd.total_cost) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3">الإجمالي</th>
-                    <th colspan="2">—</th>
-                    <th>${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</th>
-                    <th>${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</th>
-                    <th>${{ '{:,.2f}'.format(inv.total.usd.margin) }}</th>
-                    <th colspan="2">—</th>
-                    <th>{{ '{:,.2f}'.format(inv.total.iqd.total_value) }}</th>
-                    <th>{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }}</th>
-                </tr>
-            </tfoot>
-        </table>
-    </section>
+        <section class="table-box">
+            <h2>أصناف الفاتورة</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">رقم الصنف</th>
+                        <th rowspan="2">الوصف</th>
+                        <th rowspan="2">الكمية</th>
+                        <th colspan="5" class="group-usd">دولار $</th>
+                        <th colspan="4" class="group-iqd">دينار د.ع (ألف)</th>
+                    </tr>
+                    <tr>
+                        <th class="group-usd">سعر الوحدة</th>
+                        <th class="group-usd">كلفة الوحدة</th>
+                        <th class="group-usd">إجمالي البيع</th>
+                        <th class="group-usd">إجمالي الكلفة</th>
+                        <th class="group-usd">الربح</th>
+                        <th class="group-iqd">سعر الوحدة</th>
+                        <th class="group-iqd">كلفة الوحدة</th>
+                        <th class="group-iqd">إجمالي البيع</th>
+                        <th class="group-iqd">إجمالي الكلفة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for it in inv.lines %}
+                    <tr>
+                        <td>{{ it.item_no }}</td>
+                        <td class="desc">{{ it.desc }}</td>
+                        <td>{{ '{:,.0f}'.format(it.qty) }}</td>
+                        <td>${{ '{:,.4f}'.format(it.usd.unit_price) }}</td>
+                        <td>${{ '{:,.4f}'.format(it.usd.unit_cost) }}</td>
+                        <td>${{ '{:,.2f}'.format(it.usd.total_value) }}</td>
+                        <td>${{ '{:,.2f}'.format(it.usd.total_cost) }}</td>
+                        <td><span class="pos">${{ '{:,.2f}'.format(it.usd.margin) }}</span></td>
+                        <td>{{ '{:,.4f}'.format(it.iqd.unit_price) }}</td>
+                        <td>{{ '{:,.4f}'.format(it.iqd.unit_cost) }}</td>
+                        <td>{{ '{:,.2f}'.format(it.iqd.total_value) }}</td>
+                        <td>{{ '{:,.2f}'.format(it.iqd.total_cost) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3">الإجمالي</th>
+                        <th colspan="2">—</th>
+                        <th>${{ '{:,.2f}'.format(inv.total.usd.total_value) }}</th>
+                        <th>${{ '{:,.2f}'.format(inv.total.usd.total_cost) }}</th>
+                        <th>${{ '{:,.2f}'.format(inv.total.usd.margin) }}</th>
+                        <th colspan="2">—</th>
+                        <th>{{ '{:,.2f}'.format(inv.total.iqd.total_value) }}</th>
+                        <th>{{ '{:,.2f}'.format(inv.total.iqd.total_cost) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+    </div>
 </body>
 </html>
