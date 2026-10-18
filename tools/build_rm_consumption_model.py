@@ -16,7 +16,7 @@ MONTH_NAMES = ["كانون الثاني Jan", "شباط Feb", "آذار Mar", "�
                "تموز Jul", "آب Aug", "أيلول Sep"]
 # source column letters in the month sheets
 S = dict(ItemNo="C", ItemDesc="D", SubCateg="A", OpenQty="E", OpenCost="F", TotalInQty="M",
-         TotalOutQty="S", EndQty="T", EndCost="U", ItemUnitCost="V", ConsMonRate9="AD", PurchAmt="AG")
+         TotalOutQty="S", EndQty="T", EndCost="U", ItemUnitCost="V", ConsMonRate9="AD", PurchAmt="AG", RecQty="H")
 DATE_COLS = {27, 29}  # Last Purchase Date, LastIssueSaleDate
 
 wb = openpyxl.Workbook()
@@ -136,12 +136,18 @@ for r in range(2, LAST + 1):
         sh = f"'M{m:02d}'"
         c = [L(bcol(m, o)) for o in range(BLOCK)]  # letters of block columns
         oq, oc, ouc, iq, ic, iuc, xq, xc, xuc, eq, ec, euc = [f"{x}{R}" for x in c]
+        pa = f"{sh}!{S['PurchAmt']}{r}"
+        rq = f"{sh}!{S['RecQty']}{r}"
+        uc = f"IF(AND({oq}<>0,{oc}<>0),{oc}/{oq},{sh}!{S['ItemUnitCost']}{r})"  # fallback unit cost
         f = [
             f"={sh}!{S['OpenQty']}{r}",
             f"={sh}!{S['OpenCost']}{r}",
             f"=IFERROR({oc}/{oq},0)",
             f"={sh}!{S['TotalInQty']}{r}",
-            f"=IF({sh}!{S['PurchAmt']}{r}>0,{sh}!{S['PurchAmt']}{r},{iq}*IFERROR({oc}/{oq},{sh}!{S['ItemUnitCost']}{r}))",
+            # InCost: purchases at actual Purchase Amount; every other inflow unit (TotalInQty - RecQty,
+            # i.e. adjustments / production receipts / returns) at the opening unit cost, or the
+            # standard cost when there is no valued opening stock.
+            f"=IF({pa}>0,{pa}+MAX(0,{iq}-{rq})*{uc},{iq}*{uc})",
             f"=IFERROR({ic}/{iq},0)",
             f"=-{sh}!{S['TotalOutQty']}{r}",
             f"={oc}+{ic}-{ec}",
@@ -200,7 +206,7 @@ cats = sorted({v for v in (wb["M01"].cell(row=r, column=1).value for r in range(
 ss = wb.create_sheet("Summary", 1)
 sh_ = ["الفئة الفرعية\nSubCateg", "عدد المواد\nItems", "عدد المواد التي لها إخراج\nItems with Out Movement",
        "إجمالي كمية الإخراج 9 أشهر\nTotal Out Qty 9M", "إجمالي كلفة الإخراج 9 أشهر\nTotal Out Cost 9M",
-       "متوسط كلفة الاستهلاك الشهري\nAvg Monthly Out Cost", "حصة من الإجمالي %\nShare of Total %",
+       "متوسط كلفة الاستهلاك الشهري\nAvg Monthly Out Cost", "حصة من إجمالي كلفة الإخراج %\nShare of Total Out Cost %",
        "مجموع التدقيق (يجب أن يكون 0)\nSum of Check"]
 for c, h in enumerate(sh_, start=1):
     cell = ss.cell(row=1, column=c, value=h)
@@ -244,8 +250,10 @@ notes = [
     ("", ""),
     ("قواعد الكلفة:", "Cost rules:"),
     ("كلفة وحدة البداية = IFERROR(OpenCost / OpenQty, 0)", "Open unit cost = IFERROR(OpenCost / OpenQty, 0)"),
-    ("كلفة الإدخال = IF(Purchase Amount > 0, Purchase Amount, TotalInQty × IFERROR(OpenCost/OpenQty, ItemUnitCost)) — قيمة الشراء الفعلية، وعند عدم وجود شراء تُقدَّر بكلفة الوحدة الافتتاحية (أو المعيارية إذا كان الرصيد الافتتاحي صفراً).",
-     "InCost = IF(Purchase Amount > 0, Purchase Amount, TotalInQty × IFERROR(OpenCost/OpenQty, ItemUnitCost)) — actual purchase value; non-purchase inflows are valued at the opening unit cost (or the standard cost when opening stock is zero)."),
+    ("كلفة الإدخال = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC) حيث UC = كلفة الوحدة الافتتاحية OpenCost/OpenQty إن وُجد رصيد افتتاحي مقيَّم، وإلا ItemUnitCost المعيارية. أي: المشتريات بقيمة الشراء الفعلية، وباقي الإدخالات (تسويات AddQty، استلام إنتاج ProdRecQty، مرتجعات) بكلفة الوحدة الافتتاحية.",
+     "InCost = IF(Purchase Amount > 0, Purchase Amount + (TotalInQty − RecQty) × UC, TotalInQty × UC), where UC = opening unit cost OpenCost/OpenQty when a valued opening balance exists, else the standard ItemUnitCost. I.e. purchases at actual purchase value; all other inflows (AddQty adjustments, ProdRecQty production receipts, returns) at the opening unit cost."),
+    ("تحذير: كلفة الإدخال غير الشرائي تقدير؛ النظام لا يصدّر قيمتها. وكلفة الإخراج رقم موازنة يمتص أيضاً أي إعادة تقييم أو تصحيح كلفة أجراه النظام في الشهر، لذلك قد تظهر كلفة إخراج سالبة أو كلفة بلا كمية في حالات نادرة (راجع تقرير التدقيق).",
+     "Caveat: the cost of non-purchase inflows is an estimate; the system does not export it. OutCost is a balancing figure and therefore also absorbs any revaluation or cost correction the system booked in the month, so a negative OutCost, or a cost with zero quantity, can appear in rare cases (see the audit report)."),
     ("كلفة الإخراج = OpenCost + InCost − EndCost (رقم موازنة = الكلفة الفعلية بالمتوسط المتحرك لما خرج من المخزون).",
      "OutCost = OpenCost + InCost − EndCost (balancing figure = actual moving-average cost of what left stock)."),
     ("كلفة وحدة الإخراج = IFERROR(OutCost / OutQty, 0)؛ كلفة وحدة النهاية = IFERROR(EndCost / EndQty, 0).",
@@ -262,6 +270,8 @@ notes = [
     ("شهور التغطية = رصيد نهاية أيلول ÷ متوسط الإخراج الشهري الفعلي.", "Coverage months = EndQty Sep / actual average monthly out qty."),
     ("ورقة Summary: إجماليات لكل فئة فرعية SubCateg بصيغ SUMIF/COUNTIF على ورقة Model.",
      "Summary sheet: per-SubCateg totals via SUMIF/COUNTIF formulas on the Model sheet."),
+    ("تحذير: النموذج يعتمد على بقاء ترتيب الصفوف متطابقاً في الأوراق M01..M09؛ لا تقم بالفرز أو الحذف داخلها، وأي خلل سيظهر فوراً في عمود Check.",
+     "Warning: the model relies on identical row order across sheets M01..M09; never sort or delete rows inside them. Any misalignment shows immediately in the Check column."),
     ("الملف لا يحتوي قيماً محسوبة مخزنة؛ يحسب Excel كل الصيغ عند الفتح.",
      "The file stores no cached values; Excel calculates all formulas on open."),
 ]
